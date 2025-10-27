@@ -1,7 +1,7 @@
 // utils/decrypt.js
 import CryptoJS from "crypto-js";
 
-const ENCRYPTION_KEY = "kKzSL5CuqwMWZkQCQP3Ce4TaD75G78IX"; // Must match backend
+const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY // Must match backend
 
 export function decryptObject(encryptedText) {
   try {

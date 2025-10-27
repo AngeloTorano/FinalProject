@@ -45,24 +45,24 @@ CREATE TABLE patient_phases (
 );
 
 -- Phase 1 - Registration Section
-CREATE TABLE phase1_registration_section (
-    phase1_reg_id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL REFERENCES patients(patient_id),
-    phase_id INTEGER DEFAULT 1 REFERENCES phases(phase_id),
-    registration_date DATE NOT NULL,
-    city VARCHAR(100),
-    completed_by_user_id INTEGER REFERENCES users(user_id),
-    has_hearing_loss VARCHAR(50),
-    uses_sign_language VARCHAR(50),
-    uses_speech VARCHAR(50),
-    hearing_loss_causes TEXT[],
-    ringing_sensation VARCHAR(50),
-    ear_pain VARCHAR(50),
-    hearing_satisfaction_18_plus VARCHAR(50),
-    conversation_difficulty VARCHAR(50),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+    CREATE TABLE phase1_registration_section (
+        phase1_reg_id SERIAL PRIMARY KEY,
+        patient_id INTEGER NOT NULL REFERENCES patients(patient_id),
+        phase_id INTEGER DEFAULT 1 REFERENCES phases(phase_id),
+        registration_date DATE NOT NULL,
+        city VARCHAR(100),
+        completed_by_user_id INTEGER REFERENCES users(user_id),
+        has_hearing_loss VARCHAR(50),
+        uses_sign_language VARCHAR(50),
+        uses_speech VARCHAR(50),
+        hearing_loss_causes TEXT[],
+        ringing_sensation VARCHAR(50),
+        ear_pain VARCHAR(50),
+        hearing_satisfaction_18_plus VARCHAR(50),
+        conversation_difficulty VARCHAR(50),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
 
 CREATE TABLE ear_screening (
     ear_screening_id SERIAL PRIMARY KEY,
@@ -70,8 +70,7 @@ CREATE TABLE ear_screening (
     phase_id INTEGER NOT NULL REFERENCES phases(phase_id),
     completed_by_user_id INTEGER REFERENCES users(user_id),
     screening_name VARCHAR(50),
-    ears_clear_left VARCHAR(50),
-    ears_clear_right VARCHAR(50),
+    ears_clear VARCHAR(50),
     otc_wax INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
     otc_infection INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
     otc_perforation INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)

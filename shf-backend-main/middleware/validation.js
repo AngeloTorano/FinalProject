@@ -1,19 +1,32 @@
 const Joi = require("joi")
 const ResponseHandler = require("../utils/responseHandler")
 
+// Robust validateRequest: returns middleware that fails clearly when schema is missing
 const validateRequest = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body)
+    if (!schema || typeof schema.validate !== "function") {
+      console.error("[validation] missing/invalid schema for route", req.originalUrl)
+      return res.status(500).json({
+        error: "Validation schema missing on server for this route. Check middleware/validation.js exports.",
+      })
+    }
+
+    const { error, value } = schema.validate(req.body, {
+      abortEarly: false,
+      allowUnknown: true,
+      stripUnknown: true,
+    })
 
     if (error) {
       const errors = error.details.map((detail) => ({
         field: detail.path.join("."),
         message: detail.message,
       }))
-
       return ResponseHandler.validationError(res, errors)
     }
 
+    // attach sanitized payload
+    req.validatedBody = value
     next()
   }
 }
@@ -79,23 +92,39 @@ const schemas = {
   }),
 
   earScreening: Joi.object({
-    patient_id: Joi.number().integer().required(),
-    phase_id: Joi.number().integer(),
-    screening_name: Joi.string().max(50),
-    ears_clear_left: Joi.string().max(50),
-    ears_clear_right: Joi.string().max(50),
-    otc_wax: Joi.number().integer(),
-    otc_infection: Joi.number().integer(),
-    otc_perforation: Joi.number().integer(),
-    otc_tinnitus: Joi.number().integer(),
-    otc_atresia: Joi.number().integer(),
-    otc_implant: Joi.number().integer(),
-    otc_other: Joi.number().integer(),
-    medical_recommendation: Joi.string().max(50),
-    medication_given: Joi.array().items(Joi.string()),
-    left_ears_clear_for_fitting: Joi.string().max(50),
-    right_ears_clear_for_fitting: Joi.string().max(50),
-    comments: Joi.string(),
+    patient_id: Joi.number().integer().required().messages({
+      "number.base": "Patient ID must be a number",
+      "any.required": "Patient ID is required",
+    }),
+
+    screening_name: Joi.string().max(50).optional(),
+    ears_clear: Joi.string().valid("Yes", "No").optional(),
+
+    left_wax: Joi.boolean().optional(),
+    right_wax: Joi.boolean().optional(),
+    left_infection: Joi.boolean().optional(),
+    right_infection: Joi.boolean().optional(),
+    left_perforation: Joi.boolean().optional(),
+    right_perforation: Joi.boolean().optional(),
+    left_tinnitus: Joi.boolean().optional(),
+    right_tinnitus: Joi.boolean().optional(),
+    left_atresia: Joi.boolean().optional(),
+    right_atresia: Joi.boolean().optional(),
+    left_implant: Joi.boolean().optional(),
+    right_implant: Joi.boolean().optional(),
+    left_other: Joi.boolean().optional(),
+    right_other: Joi.boolean().optional(),
+
+    medication_antibiotic: Joi.boolean().optional(),
+    medication_analgesic: Joi.boolean().optional(),
+    medication_antiseptic: Joi.boolean().optional(),
+    medication_antifungal: Joi.boolean().optional(),
+
+    left_ear_clear_for_fitting: Joi.string().allow(null).optional(),
+    right_ear_clear_for_fitting: Joi.string().allow(null).optional(),
+
+    medical_recommendation: Joi.string().max(500).allow(null).optional(),
+    comments: Joi.string().max(1000).allow(null).optional(),
   }),
 
   hearingScreening: Joi.object({
@@ -119,7 +148,7 @@ const schemas = {
     shf_id_number_id_card_given: Joi.boolean(),
   }),
 
-  // Phase 2 schemas
+  // Phase 2 schemas (canonical names)
   phase2Registration: Joi.object({
     patient_id: Joi.number().integer().required(),
     registration_date: Joi.date().required(),
@@ -170,16 +199,20 @@ const schemas = {
     qc_comments: Joi.string(),
   }),
 
-  // Phase 3 schemas
+  // Phase 3 and other schemas...
   phase3Registration: Joi.object({
-    patient_id: Joi.number().integer().required(),
-    registration_date: Joi.date().required(),
-    country: Joi.string().max(100),
-    city: Joi.string().max(100),
-    type_of_aftercare: Joi.string().max(100),
-    service_center_school_name: Joi.string().max(255),
-    return_visit_custom_earmold_repair: Joi.boolean(),
-    problem_with_hearing_aid_earmold: Joi.string().max(50),
+    patient_id: Joi.number().integer().positive().required().messages({
+      "any.required": "patient_id is required",
+      "number.base": "patient_id must be a number",
+    }),
+    registration_date: Joi.date().required().messages({ "any.required": "registration_date is required" }),
+    country: Joi.string().allow("", null).optional(),
+    city: Joi.string().allow("", null).optional(),
+    type_of_aftercare: Joi.string().allow("", null).optional(),
+    service_center_school_name: Joi.string().allow("", null).optional(),
+    return_visit_picking_up_items: Joi.boolean().optional(),
+    has_problem_with_aids_earmolds: Joi.boolean().optional().allow(null),
+    // no patient snapshot fields allowed here — only registration table fields
   }),
 
   aftercareAssessment: Joi.object({
@@ -236,7 +269,7 @@ const schemas = {
     user_id: Joi.number().integer().required(),
     country_id: Joi.number().integer(),
     city_id: Joi.number().integer(),
-  }).or('country_id', 'city_id'),
+  }).or("country_id", "city_id"),
 
   updateStock: Joi.object({
     quantity: Joi.number().integer().required(),
@@ -244,6 +277,14 @@ const schemas = {
     notes: Joi.string(),
   }),
 }
+
+// Backwards / route compatibility aliases for phase2 routes
+schemas.phase2EarScreening = schemas.earScreening
+schemas.phase2HearingScreening = schemas.hearingScreening
+schemas.phase2FittingTable = schemas.fittingTable
+schemas.phase2Fitting = schemas.fitting
+schemas.phase2Counseling = schemas.counseling
+schemas.phase2FinalQC = schemas.finalQCP2
 
 module.exports = {
   validateRequest,

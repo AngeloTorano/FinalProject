@@ -80,10 +80,6 @@ INSERT INTO cities (city_name, country_id) VALUES
 ('New York', 1),
 ('Los Angeles', 1),
 ('Toronto', 2),
-('Vancouver', 2),
-('Mexico City', 3),
-('Manila', 4),
-('Mumbai', 5);
 
 -- user_locations Table: Assigns users to specific countries or cities
 CREATE TABLE user_locations (
@@ -163,15 +159,14 @@ CREATE TABLE ear_screening (
     phase_id INTEGER NOT NULL REFERENCES phases(phase_id),
     completed_by_user_id INTEGER REFERENCES users(user_id),
     screening_name VARCHAR(50),
-    ears_clear_left VARCHAR(50),
-    ears_clear_right VARCHAR(50),
-    otc_wax INTEGER,
-    otc_infection INTEGER,
-    otc_perforation INTEGER,
-    otc_tinnitus INTEGER,
-    otc_atresia INTEGER,
-    otc_implant INTEGER,
-    otc_other INTEGER,
+    ears_clear VARCHAR(50),
+    otc_wax INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_infection INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_perforation INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_tinnitus INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_atresia INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_implant INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
+    otc_other INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
     medical_recommendation VARCHAR(50),
     medication_given TEXT[],
     left_ears_clear_for_fitting VARCHAR(50),

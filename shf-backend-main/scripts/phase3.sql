@@ -67,8 +67,7 @@ CREATE TABLE ear_screening (
     phase_id INTEGER NOT NULL REFERENCES phases(phase_id),
     completed_by_user_id INTEGER REFERENCES users(user_id),
     screening_name VARCHAR(50),
-    ears_clear_left VARCHAR(50),
-    ears_clear_right VARCHAR(50),
+    ears_clear VARCHAR(50),
     otc_wax INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
     otc_infection INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)
     otc_perforation INTEGER, -- 0 = No, 1 = Yes (Left), 2 = Yes (Right), 3 = Yes (Both)

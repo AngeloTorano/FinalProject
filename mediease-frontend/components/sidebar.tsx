@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import Image from "next/image"
 import {
   Heart,
   Users,
@@ -52,12 +53,6 @@ export const NAV_ITEMS = [
     roles: ["Admin", "Country Coordinator", "City Coordinator"],
   },
   {
-    title: "Patient Map",
-    href: "/map",
-    icon: Map,
-    roles: ["Admin", "Country Coordinator", "City Coordinator"],
-  },
-  {
     title: "SMS Outreach",
     href: "/sms",
     icon: MessageSquare,
@@ -67,7 +62,7 @@ export const NAV_ITEMS = [
     title: "Inventory",
     href: "/inventory",
     icon: Package,
-    roles: ["Admin", "Supplies Manager", "Country Coordinator"],
+    roles: ["Admin", "Supply Manager"],
   },
   {
     title: "Scheduling",
@@ -108,21 +103,30 @@ export function Sidebar({ userRole, collapsed: collapsedProp, setCollapsed: setC
         collapsed ? "w-16" : "w-64",
       )}
     >
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b ">
         {!collapsed && (
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <Heart className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <div className="font-bold text-lg">MediEase</div>
-              <div className="text-xs text-muted-foreground">Starkey Foundation</div>
-            </div>
+            {/* Logo */}
+            <Image
+              src="/img/starkeyLogo.png"
+              alt="Starkey Logo"
+              width={200}
+              height={200}
+              className="rounded-md"
+            />
           </div>
         )}
-        <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="h-8 w-8 p-0">
-          {collapsed ? <ChevronRight className="h-8 w-8" /> : <ChevronLeft className="h-8 w-8" />}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!collapsed)}
+          className="h-8 w-8 p-0"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-8 w-8" />
+          ) : (
+            <ChevronLeft className="h-8 w-8" />
+          )}
         </Button>
       </div>
 
@@ -168,16 +172,41 @@ function LogoutButton({ collapsed }: { collapsed: boolean }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setBusy(true)
     try {
-      sessionStorage.removeItem("userRole")
-      sessionStorage.removeItem("user")
-      sessionStorage.removeItem("token")
-    } catch (e) {
-      console.error("Failed to clear session storage:", e)
+      const token = sessionStorage.getItem("token") || localStorage.getItem("token")
+      const base = process.env.NEXT_PUBLIC_API_URL || ""
+      const logoutUrl = base ? `${base}/api/auth/logout` : "/api/auth/logout"
+
+      try {
+        await fetch(logoutUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        })
+      } catch (err) {
+        // Non-blocking: log but continue to clear client state
+        console.error("Backend logout request failed:", err)
+      }
+
+      // Clear local session regardless of backend result
+      try {
+        sessionStorage.removeItem("userRole")
+        sessionStorage.removeItem("user")
+        sessionStorage.removeItem("token")
+        localStorage.removeItem("token")
+      } catch (e) {
+        console.error("Failed to clear storage:", e)
+      }
+
+      router.push("/")
+    } finally {
+      setBusy(false)
     }
-    router.push("/")
   }
 
   if (collapsed) {

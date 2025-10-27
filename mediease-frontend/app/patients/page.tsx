@@ -25,7 +25,7 @@ import { Users } from "lucide-react"
 
 // API instance (adjust baseURL as needed)
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
 })
 
@@ -62,9 +62,6 @@ export default function PatientsPage() {
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Add this at the top of your component, or get it from your auth/session logic
-  const userId = sessionStorage.getItem("user_id") || localStorage.getItem("user_id")
 
   // Fetch patients from backend
   useEffect(() => {
@@ -343,14 +340,39 @@ export default function PatientsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="region_district">Region/District</Label>
-                  <Input
-                    id="region_district"
-                    value={newPatient.region_district}
-                    onChange={(e) => setNewPatient((prev) => ({ ...prev, region_district: e.target.value }))}
-                  />
-                </div>
+<div className="space-y-2">
+  <Label htmlFor="region_district">Region/District</Label>
+  <select
+    id="region_district"
+    value={newPatient.region_district}
+    onChange={(e) =>
+      setNewPatient((prev) => ({ ...prev, region_district: e.target.value }))
+    }
+    className="w-full p-2 border rounded-md"
+  >
+    <option value="">Select Region</option>
+    <option value="National Capital Region (NCR)">National Capital Region (NCR)</option>
+    <option value="Cordillera Administrative Region (CAR)">Cordillera Administrative Region (CAR)</option>
+    <option value="Ilocos Region (Region I)">Ilocos Region (Region I)</option>
+    <option value="Cagayan Valley (Region II)">Cagayan Valley (Region II)</option>
+    <option value="Central Luzon (Region III)">Central Luzon (Region III)</option>
+    <option value="CALABARZON (Region IV-A)">CALABARZON (Region IV-A)</option>
+    <option value="MIMAROPA (Region IV-B)">MIMAROPA (Region IV-B)</option>
+    <option value="Bicol Region (Region V)">Bicol Region (Region V)</option>
+    <option value="Western Visayas (Region VI)">Western Visayas (Region VI)</option>
+    <option value="Central Visayas (Region VII)">Central Visayas (Region VII)</option>
+    <option value="Eastern Visayas (Region VIII)">Eastern Visayas (Region VIII)</option>
+    <option value="Zamboanga Peninsula (Region IX)">Zamboanga Peninsula (Region IX)</option>
+    <option value="Northern Mindanao (Region X)">Northern Mindanao (Region X)</option>
+    <option value="Davao Region (Region XI)">Davao Region (Region XI)</option>
+    <option value="SOCCSKSARGEN (Region XII)">SOCCSKSARGEN (Region XII)</option>
+    <option value="Caraga (Region XIII)">Caraga (Region XIII)</option>
+    <option value="Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)">
+      Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)
+    </option>
+  </select>
+</div>
+
                 <div className="space-y-2">
                   <Label htmlFor="city_village">City/Village</Label>
                   <Input

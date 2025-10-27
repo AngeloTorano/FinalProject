@@ -17,7 +17,7 @@ static async findPatientIdByShf(req, res) {
     if (numericMatch) {
       const numericValue = numericMatch[1];
       const query = `
-        SELECT patient_id
+        SELECT patient_id, last_name, first_name, date_of_birth,age, gender, mobile_number, employment_status, highest_education_level
         FROM patients
         WHERE REPLACE(REPLACE(shf_id, 'PH-SHF', ''), 'SHF', '')::INT = $1::INT
         LIMIT 1
@@ -38,7 +38,17 @@ static async findPatientIdByShf(req, res) {
       return res.status(404).json({ error: `Patient not found for shf_id: ${shf}` });
     }
 
-    res.json({ patient_id: resDb.rows[0].patient_id });
+    res.json ({ 
+      patient_id: resDb.rows[0].patient_id,
+      last_name: resDb.rows[0].last_name,
+      first_name: resDb.rows[0].first_name,
+      date_of_birth: resDb.rows[0].date_of_birth,
+      age: resDb.rows[0].age,
+      gender: resDb.rows[0].gender,
+      mobile_number: resDb.rows[0].mobile_number,
+      employment_status: resDb.rows[0].employment_status,
+      highest_education_level: resDb.rows[0].highest_education_level
+    });
   } catch (err) {
     console.error("Error resolving SHF ID:", err);
     res.status(500).json({ error: err.message });
@@ -224,48 +234,56 @@ static async findPatientIdByShf(req, res) {
 
   // ----------------------------------------------------------------------------------
 
-  static async getPatientById(req, res) {
+static async getPatientById(req, res) {
     try {
-      const { patientId } = req.params
+        const { patientId } = req.params;
 
-      // This query is CORRECT as it uses array_agg and GROUP BY to consolidate
-      // all patient phases into a single array field called 'phases'.
-      const query = `
-        SELECT p.*, 
-               array_agg(
-                 json_build_object(
-                   'phase_id', pp.phase_id,
-                   'phase_name', ph.phase_name,
-                   'status', pp.status,
-                   'start_date', pp.phase_start_date,
-                   'end_date', pp.phase_end_date,
-                   'completed_by', u.username
-                 )
-               ) as phases
-        FROM patients p
-        LEFT JOIN patient_phases pp ON p.patient_id = pp.patient_id
-        LEFT JOIN phases ph ON pp.phase_id = ph.phase_id
-        LEFT JOIN users u ON pp.completed_by_user_id = u.user_id
-        WHERE p.patient_id = $1
-        GROUP BY p.patient_id
-      `
+        // ✅ Clean SQL query — no hidden spaces, no leading newline
+        const query = `SELECT 
+            p.*,
+            COALESCE(
+              array_agg(
+                json_build_object(
+                  'phase_id', pp.phase_id,
+                  'phase_name', ph.phase_name,
+                  'status', pp.status,
+                  'start_date', pp.phase_start_date,
+                  'end_date', pp.phase_end_date,
+                  'completed_by', u.username
+                )
+              ) FILTER (WHERE pp.phase_id IS NOT NULL),
+              ARRAY[]::json[]
+            ) AS phases
+          FROM patients p
+          LEFT JOIN patient_phases pp ON p.patient_id = pp.patient_id
+          LEFT JOIN phases ph ON pp.phase_id = ph.phase_id
+          LEFT JOIN users u ON pp.completed_by_user_id = u.user_id
+          WHERE p.patient_id = $1
+          GROUP BY p.patient_id;`;
 
-      const result = await db.query(query, [patientId])
+        // 👇 ERROR FIXED: Changed 'cleanQuery' to 'query'
+        const result = await db.query(query, [patientId]);
 
-      if (result.rows.length === 0) {
-        return ResponseHandler.notFound(res, "Patient not found")
-      }
+        if (result.rows.length === 0) {
+            return ResponseHandler.notFound(res, "Patient not found");
+        }
 
-      const patient = result.rows[0]
-      // Filter out the initial row created by the LEFT JOIN when no phases exist
-      patient.phases = patient.phases.filter((phase) => phase.phase_id !== null)
+        const patient = result.rows[0];
 
-      return ResponseHandler.success(res, patient, "Patient retrieved successfully")
+        // ✅ Ensure `phases` is always a proper array
+        patient.phases = Array.isArray(patient.phases)
+            ? patient.phases.filter(
+                  (phase) => phase && phase.phase_id !== null
+                )
+            : [];
+
+        return ResponseHandler.success(res, patient, "Patient retrieved successfully");
     } catch (error) {
-      console.error("Get patient error:", error)
-      return ResponseHandler.error(res, "Failed to retrieve patient")
+        console.error("Get patient error:", error);
+        return ResponseHandler.error(res, "Failed to retrieve patient");
     }
-  }
+}
+  
   static async updatePatient(req, res) {
     const client = await db.getClient()
 

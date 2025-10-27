@@ -15,6 +15,6 @@ router.get("/roles", requireRole(["Admin"]), UserController.getRoles)
 router.get("/:userId", requireRole(["Admin"]), UserController.getUserById)
 router.put("/:userId", requireRole(["Admin"]), UserController.updateUser)
 router.put("/:userId/roles", requireRole(["Admin"]), UserController.updateUserRoles)
-router.delete("/:userId", requireRole(["Admin"]), UserController.deactivateUser)
+router.delete("/:userId/deactive", requireRole(["Admin"]), UserController.deactivateUser)
 
 module.exports = router

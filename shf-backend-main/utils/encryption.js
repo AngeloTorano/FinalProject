@@ -87,4 +87,12 @@ class EncryptionUtil {
   }
 }
 
-module.exports = EncryptionUtil;
+// Add named helper exports for common usage (keeps backwards compatibility)
+module.exports = {
+  EncryptionUtil,
+  encryptText: (text) => EncryptionUtil.encrypt(text),
+  decryptText: (text) => EncryptionUtil.decrypt(text),
+  encryptObject: (obj) => EncryptionUtil.encryptObject(obj),
+  decryptObject: (encryptedText) => EncryptionUtil.decryptObject(encryptedText),
+  hashData: (data) => EncryptionUtil.hashData(data),
+};

@@ -17,6 +17,7 @@ const phase2Routes = require("./routes/phase2");
 const phase3Routes = require("./routes/phase3");
 const auditRoutes = require("./routes/audit");
 const dashboardRoutes = require("./routes/dashboard");
+const reportsRoutes = require("./routes/reportsRoutes")
 
 const app = express();
 
@@ -88,6 +89,7 @@ app.use("/api/phase2", phase2Routes);
 app.use("/api/phase3", phase3Routes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportsRoutes)
 
 // 404 handler - MUST be after all other routes
 app.use("*", (req, res) => {

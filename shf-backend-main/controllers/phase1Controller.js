@@ -4,189 +4,272 @@ const ResponseHandler = require("../utils/responseHandler")
 class Phase1Controller {
   // Phase 1 Registration Section
   static async createRegistration(req, res) {
-    const client = await db.getClient()
+    const client = await db.getClient();
 
     try {
-      await client.query("BEGIN")
+      await client.query("BEGIN");
 
-      const registrationData = req.body
-      registrationData.completed_by_user_id = req.user.user_id
-      registrationData.phase_id = 1
+      const registrationData = req.body || {};
+      registrationData.completed_by_user_id = req.user?.user_id;
+      registrationData.phase_id = 1;
 
-      // Map frontend field names to database column names with correct data types
+      // Debug logs to verify data coming from frontend
+      console.log("Raw registrationData:", registrationData);
+
+      // Map frontend field names to database column names with safe parsing
       const mappedData = {
-        patient_id: parseInt(registrationData.user_id),
+        patient_id: Number(registrationData.patient_id) || null,
         phase_id: 1,
-        registration_date: registrationData.registration_date,
-        city: registrationData.city ? String(registrationData.city) : null,
-        completed_by_user_id: parseInt(registrationData.completed_by_user_id),
-        has_hearing_loss: registrationData.has_hearing_loss !== undefined ? 
-                         (registrationData.has_hearing_loss ? 'Yes' : 'No') : null,
-        uses_sign_language: registrationData.uses_sign_language ? String(registrationData.uses_sign_language) : null,
-        uses_speech: registrationData.uses_speech ? String(registrationData.uses_speech) : null,
-        hearing_loss_causes: Array.isArray(registrationData.hearing_loss_causes) ? 
-                            registrationData.hearing_loss_causes.filter(Boolean) : null,
-        ringing_sensation: registrationData.ringing_sensation ? String(registrationData.ringing_sensation) : null,
-        ear_pain: registrationData.ear_pain ? String(registrationData.ear_pain) : null,
-        hearing_satisfaction_18_plus: registrationData.hearing_satisfaction_18_plus ? 
-                                     String(registrationData.hearing_satisfaction_18_plus) : null,
-        conversation_difficulty: registrationData.conversation_difficulty ? 
-                                String(registrationData.conversation_difficulty) : null
-      }
+        registration_date: registrationData.registration_date || null,
+        city: registrationData.city ? String(registrationData.city).trim() : null,
+        completed_by_user_id: Number(registrationData.completed_by_user_id) || null,
+        has_hearing_loss:
+          registrationData.has_hearing_loss !== undefined && registrationData.has_hearing_loss !== null
+            ? registrationData.has_hearing_loss === true || registrationData.has_hearing_loss === "Yes"
+              ? "Yes"
+              : "No"
+            : null,
+        uses_sign_language: registrationData.uses_sign_language ? String(registrationData.uses_sign_language).trim() : null,
+        uses_speech: registrationData.uses_speech ? String(registrationData.uses_speech).trim() : null,
+        hearing_loss_causes: Array.isArray(registrationData.hearing_loss_causes)
+          ? registrationData.hearing_loss_causes.filter(Boolean)
+          : null,
+        ringing_sensation: registrationData.ringing_sensation ? String(registrationData.ringing_sensation).trim() : null,
+        ear_pain: registrationData.ear_pain ? String(registrationData.ear_pain).trim() : null,
+        hearing_satisfaction_18_plus: registrationData.hearing_satisfaction_18_plus
+          ? String(registrationData.hearing_satisfaction_18_plus).trim()
+          : null,
+        conversation_difficulty: registrationData.conversation_difficulty
+          ? String(registrationData.conversation_difficulty).trim()
+          : null,
+      };
 
-      // Remove undefined values and empty arrays
-      Object.keys(mappedData).forEach(key => {
+      // Remove undefined, null, or empty array values
+      Object.keys(mappedData).forEach((key) => {
         if (mappedData[key] === undefined || mappedData[key] === null) {
-          delete mappedData[key]
+          delete mappedData[key];
         }
         if (Array.isArray(mappedData[key]) && mappedData[key].length === 0) {
-          delete mappedData[key]
+          delete mappedData[key];
         }
-      })
+      });
 
-      // Validate required fields
-      if (!mappedData.patient_id) {
-        await client.query("ROLLBACK")
-        return ResponseHandler.error(res, "Patient ID is required", 400)
+      // Debugging output for mapped data
+      console.log("Mapped Data:", mappedData);
+
+      // ✅ Validate required fields
+      if (!mappedData.patient_id || isNaN(mappedData.patient_id)) {
+        await client.query("ROLLBACK");
+        console.error("Validation failed: Missing or invalid patient_id");
+        return ResponseHandler.error(res, "Patient ID is required", 400);
       }
 
       if (!mappedData.registration_date) {
-        await client.query("ROLLBACK")
-        return ResponseHandler.error(res, "Registration date is required", 400)
+        await client.query("ROLLBACK");
+        console.error("Validation failed: Missing registration_date");
+        return ResponseHandler.error(res, "Registration date is required", 400);
       }
 
-      const columns = Object.keys(mappedData).join(", ")
+      // Build INSERT query dynamically
+      const columns = Object.keys(mappedData).join(", ");
       const placeholders = Object.keys(mappedData)
         .map((_, index) => `$${index + 1}`)
-        .join(", ")
-      const values = Object.values(mappedData)
+        .join(", ");
+      const values = Object.values(mappedData);
 
       const query = `
-        INSERT INTO phase1_registration_section (${columns})
-        VALUES (${placeholders})
-        RETURNING *
-      `
+      INSERT INTO phase1_registration_section (${columns})
+      VALUES (${placeholders})
+      RETURNING *
+    `;
 
-      console.log("Registration Query:", query)
-      console.log("Registration Values:", values)
+      console.log("Registration Query:", query);
+      console.log("Registration Values:", values);
 
-      const result = await client.query(query, values)
+      const result = await client.query(query, values);
 
-      // Log creation
+      // Log creation in audit_logs
       await client.query(
-        "INSERT INTO audit_logs (table_name, record_id, action_type, new_data, changed_by_user_id) VALUES ($1, $2, $3, $4, $5)",
+        `INSERT INTO audit_logs 
+        (table_name, record_id, action_type, new_data, changed_by_user_id) 
+        VALUES ($1, $2, $3, $4, $5)`,
         [
           "phase1_registration_section",
           result.rows[0].phase1_reg_id,
           "CREATE",
           JSON.stringify(mappedData),
-          req.user.user_id,
-        ],
-      )
+          req.user?.user_id || null,
+        ]
+      );
 
-      await client.query("COMMIT")
+      await client.query("COMMIT");
 
-      return ResponseHandler.success(res, result.rows[0], "Phase 1 registration created successfully", 201)
+      return ResponseHandler.success(
+        res,
+        result.rows[0],
+        "Phase 1 registration created successfully",
+        201
+      );
     } catch (error) {
-      await client.query("ROLLBACK")
-      console.error("Create Phase 1 registration error:", error)
-      return ResponseHandler.error(res, "Failed to create Phase 1 registration: " + error.message)
+      await client.query("ROLLBACK");
+      console.error("Create Phase 1 registration error:", error);
+      return ResponseHandler.error(res, "Failed to create Phase 1 registration: " + error.message);
     } finally {
-      client.release()
+      client.release();
     }
   }
 
   // Ear Screening
   static async createEarScreening(req, res) {
-    const client = await db.getClient()
+    const client = await db.getClient();
+
+    // Helper function to map boolean Left/Right flags to the 0/1/2/3 INTEGER code
+    const mapEarConditionsToInteger = (left, right) => {
+      const isLeft = !!left && (left === true || String(left).toLowerCase() === "yes");
+      const isRight = !!right && (right === true || String(right).toLowerCase() === "yes");
+
+      if (isLeft && isRight) return 3; // Both
+      if (isLeft) return 1; // Left only
+      if (isRight) return 2; // Right only
+      return 0; // None
+    };
 
     try {
-      await client.query("BEGIN")
+      await client.query("BEGIN");
 
-      const screeningData = req.body
-      screeningData.completed_by_user_id = req.user.user_id
-      screeningData.phase_id = 1
+      const screeningData = req.body || {};
+      screeningData.completed_by_user_id = req.user?.user_id;
+      screeningData.phase_id = 1;
 
-      // Map frontend field names to database column names with correct data types
+      // Debug raw data from frontend
+      console.log("Raw screeningData:", screeningData);
+
+      // Collect medication checkboxes into a TEXT[] array
+      const medicationGiven = [];
+      if (screeningData.medication_antibiotic) medicationGiven.push("Antibiotic");
+      if (screeningData.medication_analgesic) medicationGiven.push("Analgesic");
+      if (screeningData.medication_antiseptic) medicationGiven.push("Antiseptic");
+      if (screeningData.medication_antifungal) medicationGiven.push("Antifungal");
+
+      // Determine if both ears were reported clear for impressions
+      const earsClear = String(screeningData.ears_clear).toLowerCase() === "yes";
+
+      // Map frontend field names to database column names
       const mappedData = {
-        patient_id: parseInt(screeningData.user_id),
+        patient_id: Number(screeningData.patient_id),
         phase_id: 1,
-        completed_by_user_id: parseInt(screeningData.completed_by_user_id),
-        ears_clear_left: screeningData.ears_clear_for_impressions === "Yes" ? "Yes" : "No",
-        ears_clear_right: screeningData.ears_clear_for_impressions === "Yes" ? "Yes" : "No",
-        otc_wax: this.mapEarConditionsToInteger(screeningData.left_wax, screeningData.right_wax),
-        otc_infection: this.mapEarConditionsToInteger(screeningData.left_infection, screeningData.right_infection),
-        otc_perforation: this.mapEarConditionsToInteger(screeningData.left_perforation, screeningData.right_perforation),
-        otc_tinnitus: this.mapEarConditionsToInteger(screeningData.left_tinnitus, screeningData.right_tinnitus),
-        otc_atresia: this.mapEarConditionsToInteger(screeningData.left_atresia, screeningData.right_atresia),
-        otc_implant: this.mapEarConditionsToInteger(screeningData.left_implant, screeningData.right_implant),
-        otc_other: this.mapEarConditionsToInteger(screeningData.left_other, screeningData.right_other),
-        medical_recommendation: screeningData.medical_recommendation ? String(screeningData.medical_recommendation) : null,
-        medication_given: Array.isArray(screeningData.medication_given) ? 
-                         screeningData.medication_given.filter(Boolean) : null,
-        comments: screeningData.comments ? String(screeningData.comments) : null
+        completed_by_user_id: Number(screeningData.completed_by_user_id) || null,
+        screening_name: screeningData.screening_name ? String(screeningData.screening_name).trim() : null,
+
+        // Initial Ears Clear (Uses explicit fields from the UI)
+        ears_clear: earsClear ? "Yes" : "No",
+
+        // Map ear conditions using the helper function — set to null when both ears are clear
+        otc_wax: earsClear ? null : mapEarConditionsToInteger(screeningData.left_wax, screeningData.right_wax),
+        otc_infection: earsClear ? null : mapEarConditionsToInteger(screeningData.left_infection, screeningData.right_infection),
+        otc_perforation: earsClear ? null : mapEarConditionsToInteger(screeningData.left_perforation, screeningData.right_perforation),
+        otc_tinnitus: earsClear ? null : mapEarConditionsToInteger(screeningData.left_tinnitus, screeningData.right_tinnitus),
+        otc_atresia: earsClear ? null : mapEarConditionsToInteger(screeningData.left_atresia, screeningData.right_atresia),
+        otc_implant: earsClear ? null : mapEarConditionsToInteger(screeningData.left_implant, screeningData.right_implant),
+        otc_other: earsClear ? null : mapEarConditionsToInteger(screeningData.left_other, screeningData.right_other),
+
+        // Text fields and medication arrays — set to null when both ears are clear
+        medical_recommendation: earsClear ? null : (screeningData.medical_recommendation ? String(screeningData.medical_recommendation).trim() : null),
+        medication_given: earsClear ? null : (medicationGiven.length > 0 ? medicationGiven : null),
+
+        // ✅ Final Ears Clear for Fitting (post-otoscopy) — corrected field names
+        left_ear_clear_for_fitting: earsClear ? null : (
+          screeningData.left_ear_clear_for_fitting
+            ? String(screeningData.left_ear_clear_for_fitting).trim()
+            : "No"
+        ),
+        right_ear_clear_for_fitting: earsClear ? null : (
+          screeningData.right_ear_clear_for_fitting
+            ? String(screeningData.right_ear_clear_for_fitting).trim()
+            : "No"
+        ),
+
+        comments: earsClear ? null : (screeningData.comments ? String(screeningData.comments).trim() : null),
+      };
+
+      // Get actual columns in the ear_screening table and keep only valid ones
+      const colsRes = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'ear_screening'
+    `);
+      const tableCols = new Set(colsRes.rows.map((r) => r.column_name));
+
+      const finalMapped = {};
+      for (const [key, value] of Object.entries(mappedData)) {
+        if (!tableCols.has(key)) {
+          console.warn(`Skipping field "${key}" - not present in ear_screening table`);
+          continue;
+        }
+        if (value === undefined || value === null) continue;
+        if (Array.isArray(value) && value.length === 0) continue;
+        finalMapped[key] = value;
       }
 
-      // Remove undefined values and empty arrays
-      Object.keys(mappedData).forEach(key => {
-        if (mappedData[key] === undefined || mappedData[key] === null) {
-          delete mappedData[key]
-        }
-        if (Array.isArray(mappedData[key]) && mappedData[key].length === 0) {
-          delete mappedData[key]
-        }
-      })
+      // Debug mapped data
+      console.log("Mapped Ear Screening Data (filtered to existing columns):", finalMapped);
 
-      // Validate required fields
-      if (!mappedData.patient_id) {
-        await client.query("ROLLBACK")
-        return ResponseHandler.error(res, "Patient ID is required", 400)
+      // ✅ Validate required fields
+      if (!finalMapped.patient_id || isNaN(finalMapped.patient_id)) {
+        await client.query("ROLLBACK");
+        console.error("Validation failed: Missing or invalid patient_id");
+        return res.status(400).json({ error: "Patient ID is required" });
       }
 
-      const columns = Object.keys(mappedData).join(", ")
-      const placeholders = Object.keys(mappedData)
-        .map((_, index) => `$${index + 1}`)
-        .join(", ")
-      const values = Object.values(mappedData)
+      // Build SQL insert
+      const columns = Object.keys(finalMapped).join(", ");
+      const placeholders = Object.keys(finalMapped).map((_, i) => `$${i + 1}`).join(", ");
+      const values = Object.values(finalMapped);
 
       const query = `
-        INSERT INTO ear_screening (${columns})
-        VALUES (${placeholders})
-        RETURNING *
-      `
+      INSERT INTO ear_screening (${columns})
+      VALUES (${placeholders})
+      RETURNING *
+    `;
 
-      console.log("Ear Screening Query:", query)
-      console.log("Ear Screening Values:", values)
+      console.log("Ear Screening Query:", query);
+      console.log("Ear Screening Values:", values);
 
-      const result = await client.query(query, values)
+      const result = await client.query(query, values);
 
-      // Log creation
+      // Log audit
       await client.query(
-        "INSERT INTO audit_logs (table_name, record_id, action_type, new_data, changed_by_user_id) VALUES ($1, $2, $3, $4, $5)",
-        ["ear_screening", result.rows[0].ear_screening_id, "CREATE", JSON.stringify(mappedData), req.user.user_id],
-      )
+        `
+        INSERT INTO audit_logs (
+          table_name, record_id, action_type, new_data, changed_by_user_id
+        ) VALUES ($1, $2, $3, $4, $5)
+      `,
+        [
+          "ear_screening",
+          result.rows[0].ear_screening_id,
+          "CREATE",
+          JSON.stringify(finalMapped),
+          req.user?.user_id || null,
+        ]
+      );
 
-      await client.query("COMMIT")
+      await client.query("COMMIT");
 
-      return ResponseHandler.success(res, result.rows[0], "Ear screening created successfully", 201)
+      return res.status(201).json({
+        message: "Ear screening created successfully",
+        data: result.rows[0],
+      });
     } catch (error) {
-      await client.query("ROLLBACK")
-      console.error("Create ear screening error:", error)
-      return ResponseHandler.error(res, "Failed to create ear screening: " + error.message)
+      await client.query("ROLLBACK");
+      console.error("Create ear screening error:", error);
+      return res.status(500).json({
+        error: "Failed to create ear screening",
+        details: error.message,
+      });
     } finally {
-      client.release()
+      client.release();
     }
-  }
-
-  // Helper method to map ear conditions to database INTEGER format
-  static mapEarConditionsToInteger(leftCondition, rightCondition) {
-    const left = Boolean(leftCondition)
-    const right = Boolean(rightCondition)
-    
-    if (left && right) return 3; // Both
-    if (left) return 1; // Left only
-    if (right) return 2; // Right only
-    return 0; // None
   }
 
   // Hearing Screening
@@ -196,20 +279,20 @@ class Phase1Controller {
     try {
       await client.query("BEGIN")
 
-      const screeningData = req.body
-      screeningData.completed_by_user_id = req.user.user_id
-      screeningData.phase_id = 1
+      const hearingScreeningData = req.body
+      hearingScreeningData.completed_by_user_id = req.user.user_id
+      hearingScreeningData.phase_id = 1
 
       // Map frontend field names to database column names with correct data types
       const mappedData = {
-        patient_id: parseInt(screeningData.user_id),
+        patient_id: Number(hearingScreeningData.patient_id),
         phase_id: 1,
-        completed_by_user_id: parseInt(screeningData.completed_by_user_id),
-        screening_method: screeningData.screening_method ? String(screeningData.screening_method) : null,
-        left_ear_result: screeningData.left_ear_result ? String(screeningData.left_ear_result) : null,
-        right_ear_result: screeningData.right_ear_result ? String(screeningData.right_ear_result) : null,
-        hearing_satisfaction_18_plus_pass: screeningData.satisfaction_with_hearing ? 
-                                         String(screeningData.satisfaction_with_hearing) : null
+        completed_by_user_id: parseInt(hearingScreeningData.completed_by_user_id),
+        screening_method: hearingScreeningData.screening_method ? String(hearingScreeningData.screening_method) : null,
+        left_ear_result: hearingScreeningData.left_ear_result ? String(hearingScreeningData.left_ear_result) : null,
+        right_ear_result: hearingScreeningData.right_ear_result ? String(hearingScreeningData.right_ear_result) : null,
+        hearing_satisfaction_18_plus_pass: hearingScreeningData.hearing_satisfaction_18_plus_pass ?
+          String(hearingScreeningData.hearing_satisfaction_18_plus_pass) : null
       }
 
       // Remove undefined values
@@ -279,7 +362,7 @@ class Phase1Controller {
 
       // Map frontend field names to database column names with correct data types
       const mappedData = {
-        patient_id: parseInt(impressionData.user_id),
+        patient_id: Number(impressionData.patient_id),
         phase_id: 1,
         completed_by_user_id: parseInt(impressionData.completed_by_user_id),
         ear_impression: impressionData.ear_impression ? String(impressionData.ear_impression) : null,
@@ -352,7 +435,7 @@ class Phase1Controller {
 
       // Map frontend field names to database column names with correct data types
       const mappedData = {
-        patient_id: parseInt(qcData.user_id),
+        patient_id: Number(qcData.patient_id),
         phase_id: 1,
         completed_by_user_id: parseInt(qcData.completed_by_user_id),
         ear_impressions_inspected_collected: Boolean(qcData.ear_impressions_inspected),
@@ -403,7 +486,7 @@ class Phase1Controller {
       console.error("Create Phase 1 final QC error:", error)
       return ResponseHandler.error(res, "Failed to create Phase 1 final QC: " + error.message)
     } finally {
-      client.release()
+      client.release();
     }
   }
 
