@@ -1,3 +1,5 @@
+//sample
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -17,18 +19,36 @@ const phase2Routes = require("./routes/phase2");
 const phase3Routes = require("./routes/phase3");
 const auditRoutes = require("./routes/audit");
 const dashboardRoutes = require("./routes/dashboard");
-const reportsRoutes = require("./routes/reportsRoutes")
+const reportsRoutes = require("./routes/reportsRoutes");
+const scheduleRoutes = require("./routes/schedule");
+const smsRoutes = require("./routes/smsRoutes");
 
 const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
-    credentials: true,
-  })
-);
+
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // allow requests with no origin like mobile apps or Postman
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
+
+// Handle preflight OPTIONS requests globally
+app.options("*", cors());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -52,17 +72,6 @@ app.get("/", (req, res) => {
   res.json({
     message: "Welcome to the SHF Backend API",
     version: "1.0.0",
-    documentation: process.env.DOCS_URL || "No documentation URL set",
-    endpoints: {
-      auth: "/api/auth",
-      users: "/api/users",
-      patients: "/api/patients",
-      supplies: "/api/supplies",
-      phases: "/api/phases",
-      locations: "/api/locations",
-      audit: "/api/audit",
-      dashboard: "/api/dashboard",
-    },
     healthCheck: "/health",
   });
 });
@@ -89,9 +98,11 @@ app.use("/api/phase2", phase2Routes);
 app.use("/api/phase3", phase3Routes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/reports", reportsRoutes)
+app.use("/api/reports", reportsRoutes);
+app.use("/api/schedules", scheduleRoutes);
+app.use("/api/sms", smsRoutes);
 
-// 404 handler - MUST be after all other routes
+// 404 handler
 app.use("*", (req, res) => {
   res.status(404).json({
     error: "Route not found",
@@ -102,7 +113,7 @@ app.use("*", (req, res) => {
   });
 });
 
-// Error handling middleware - MUST be after all other middleware/routes
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
 
@@ -114,12 +125,9 @@ app.use((err, req, res, next) => {
   }
 
   if (err.name === "UnauthorizedError") {
-    return res.status(401).json({
-      error: "Unauthorized",
-    });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Handle rate limit errors
   if (err.status === 429) {
     return res.status(429).json({
       error: "Too many requests",
