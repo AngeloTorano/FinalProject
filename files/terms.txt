@@ -1,0 +1,81 @@
+MediEase Terms and Conditions for Staff Access
+________________________________________
+1. Introduction
+Welcome to MediEase, the centralized healthcare information management system of the Starkey Hearing Foundation. This system has been developed to streamline healthcare operations, manage patient data securely, and ensure efficient coordination among staff and medical missions.
+By logging in to this system, you acknowledge and agree to the following terms and conditions governing your access and use of MediEase. Your use of the system implies full acceptance of all provisions stated herein, as well as compliance with the organization’s Data Privacy Policy, Information Security Policy, and Code of Conduct.
+These terms are established in compliance with:
+•	Republic Act No. 10173 (Data Privacy Act of 2012) and its Implementing Rules and Regulations (IRR)
+•	ISO/IEC 27001:2022 Information Security Management Systems (ISMS) standards
+•	RA 8792 – E-Commerce Act of 2000 and other relevant Philippine laws
+________________________________________
+2. Purpose
+The purpose of these Terms and Conditions is to protect the integrity, confidentiality, and availability of data stored within MediEase. It aims to ensure that all staff members use the system responsibly, ethically, and in accordance with established data protection and organizational policies.
+________________________________________
+3. Authorized Use
+3.1. Access to MediEase is strictly limited to authorized personnel—including Administrators, Country Coordinators, City Coordinators, and Supplies Managers—who have been granted specific user credentials.
+3.2. User accounts are personal and non-transferable. Each staff member is responsible for all activities performed under their assigned username.
+3.3. The use of MediEase for personal, unauthorized, or non-official purposes is strictly prohibited.
+3.4. Users must log out immediately after completing their tasks and avoid leaving the system unattended on an active session.
+3.5. Unauthorized access, misuse, alteration, or destruction of any data or system functionality is a serious offense and may lead to disciplinary and legal action.
+________________________________________
+4. Data Privacy and Confidentiality
+4.1. MediEase fully complies with the Data Privacy Act of 2012 and the organization’s internal Data Protection Protocols.
+4.2. All information within the system—including patient records, mission data, and supply inventories—is confidential and protected under applicable privacy laws.
+4.3. Users must not disclose, copy, reproduce, download, or distribute any data obtained from the system without explicit authorization from theAdmin.
+4.4. Staff shall collect and process personal data only for legitimate, specific, and lawful purposes related to healthcare operations.
+4.5. Any intentional or accidental disclosure of patient information to unauthorized parties constitutes a data breach and must be immediately reported to the system administrator.
+4.6. Data accessed through MediEase must never be stored on unsecured devices or transmitted through non-encrypted means.
+________________________________________
+5. Data Accuracy and Integrity
+5.1. All users are responsible for ensuring that the data they enter or update within the system is accurate, complete, and up-to-date.
+5.2. Users are prohibited from falsifying or manipulating any patient record, inventory report, or mission detail.
+5.3. The system automatically records all user activities (audit trails) to maintain accountability and traceability of every transaction.
+5.4. Any discovered data inaccuracy must be corrected promptly following the organization’s established validation process.
+________________________________________
+6. Information Security and ISO Compliance
+6.1. MediEase operates under the framework of ISO/IEC 27001:2022 Information Security Management System (ISMS), ensuring the highest level of data protection and system resilience.
+6.2. The system uses multi-layered security mechanisms such as encryption, two-factor authentication (2FA), firewalls, and role-based access control to safeguard data.
+6.3. Staff must:
+•	Use only secure and authorized devices to access the system.
+•	Avoid using public or shared networks.
+•	Refrain from installing unauthorized software that may compromise data integrity.
+•	Regularly change passwords and ensure they meet security standards.
+6.4. System access logs, configuration changes, and data transfers are monitored and audited to maintain compliance with ISO and data privacy requirements.
+6.5. Users are expected to participate in mandatory data security and privacy awareness training as part of ISO/IEC 27001 compliance.
+________________________________________
+7. Intellectual Property and System Ownership
+7.1. All components of MediEase—including its software code, database, design, and documentation—are the intellectual property of the Starkey Hearing Foundation.
+7.2. Unauthorized reproduction, reverse engineering, or redistribution of any part of the system is strictly prohibited.
+7.3. All data processed or uploaded into MediEase remain the property of the organization and its beneficiaries.
+________________________________________
+8. Monitoring and Audit
+8.1. All activities within MediEase are automatically monitored, logged, and audited for operational, security, and compliance purposes.
+8.2. The organization reserves the right to review logs and take appropriate action in cases of misuse or policy violations.
+8.3. Regular system audits are conducted as part of ISO 27001 compliance to ensure ongoing effectiveness of security controls.
+________________________________________
+9. Liability and Disciplinary Action
+9.1. Failure to comply with these Terms and Conditions may result in disciplinary measures, including account suspension, termination of employment, or legal proceedings.
+9.2. The organization shall not be held liable for any loss or damage resulting from unauthorized use of the system by the user.
+9.3. Users who become aware of any vulnerabilities or security risks must immediately report them and refrain from attempting to exploit them.
+________________________________________
+10. System Availability and Maintenance
+10.1. MediEase may undergo scheduled maintenance, security updates, or enhancements. Users will be notified in advance whenever possible.
+10.2. During maintenance periods, access to certain modules or functions may be temporarily restricted.
+10.3. The system is continuously improved to align with technological advancements and ISO requirements.
+________________________________________
+11. Agreement and Acceptance
+By proceeding to log in and use MediEase, you expressly acknowledge that:
+•	You are an authorized staff member of Starkey Hearing Foundation.
+•	You have read and fully understood these Terms and Conditions.
+•	You agree to comply with all applicable data privacy, security, and organizational policies.
+•	You understand that violations of these terms may result in disciplinary or legal action.
+To continue, please select “I Agree” below.
+If you do not accept these conditions, select “Cancel” and contact the administrator for clarification.
+________________________________________
+Version Control
+Document Title: MediEase Staff Terms and Conditions
+Version: 1.0
+Effective Date: October 31, 2025
+Prepared by: System Administrator 
+Compliant with: Data Privacy Act of 2012 & ISO/IEC 27001:2022
+
